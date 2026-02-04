@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
@@ -57,6 +58,17 @@ function StateUI({ currentState, transitionTo }: StateUIProps) {
 
 export default function App() {
   const { currentState, transition, transitionTo } = useEntityState()
+  const [autoRotate, setAutoRotate] = useState(true)
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === '`') {
+        setAutoRotate(prev => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   return (
     <>
@@ -80,6 +92,8 @@ export default function App() {
           minDistance={5}
           maxDistance={25}
           target={[0, 2, 0]}
+          autoRotate={autoRotate}
+          autoRotateSpeed={0.5}
         />
       </Canvas>
       <StateUI currentState={currentState} transitionTo={transitionTo} />

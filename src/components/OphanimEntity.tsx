@@ -66,8 +66,10 @@ interface ParticleRingProps {
 }
 
 function ParticleRing({ config, index, currentState, transition }: ParticleRingProps) {
+  const groupRef = useRef<THREE.Group>(null)
   const pointsRef = useRef<THREE.Points>(null)
   const rotationRef = useRef(0)
+  const ringRotationRef = useRef({ x: 0, y: 0, z: 0 })
 
   const { basePositions, phases, sizes } = useMemo(() => {
     const basePositions = new Float32Array(PARTICLES_PER_RING * 3)
@@ -170,22 +172,43 @@ function ParticleRing({ config, index, currentState, transition }: ParticleRingP
   }, [])
 
   useFrame((state, delta) => {
-    if (!pointsRef.current) return
+    if (!pointsRef.current || !groupRef.current) return
 
     const time = state.clock.elapsedTime
 
     // Get state-based values
-    const speedMultiplier = getInterpolatedValue(0.3, 0.8, 2.0, currentState, transition)
+    const flowSpeed = getInterpolatedValue(0.1, 0.3, 0.6, currentState, transition)
     const spread = getInterpolatedValue(0.4, 0.15, 0.05, currentState, transition)
     const opacity = getInterpolatedValue(0.4, 0.6, 0.9, currentState, transition)
     const pulseIntensity = getInterpolatedValue(0.1, 0.4, 0.8, currentState, transition)
 
-    // Rotation
-    rotationRef.current += delta * config.speed * speedMultiplier
+    // Ring tumble rotation speed (the whole ring rotating in space)
+    // Resting: very slow, Thinking: moderate, Acting: fast
+    const ringRotationSpeed = getInterpolatedValue(0.02, 0.15, 0.4, currentState, transition)
 
-    // Rotate particles around the ring axis
+    // Rotate the entire ring (tumbling in 3D space)
+    // Each ring rotates on different axes based on its index for variety
+    const rotationAxes = [
+      { x: 1, y: 0.3, z: 0.2 },
+      { x: 0.2, y: 1, z: 0.3 },
+      { x: 0.3, y: 0.2, z: 1 },
+      { x: 0.5, y: 0.5, z: 0.5 },
+    ]
+    const axes = rotationAxes[index % rotationAxes.length]
+
+    ringRotationRef.current.x += delta * ringRotationSpeed * config.speed * axes.x
+    ringRotationRef.current.y += delta * ringRotationSpeed * config.speed * axes.y
+    ringRotationRef.current.z += delta * ringRotationSpeed * config.speed * axes.z
+
+    groupRef.current.rotation.x = ringRotationRef.current.x
+    groupRef.current.rotation.y = ringRotationRef.current.y
+    groupRef.current.rotation.z = ringRotationRef.current.z
+
+    // Particle flow along the ring (the gaseous flowing effect)
+    rotationRef.current += delta * config.speed * flowSpeed
+
     const posAttr = pointsRef.current.geometry.getAttribute('position') as THREE.BufferAttribute
-    const quaternion = new THREE.Quaternion().setFromAxisAngle(config.axis, delta * config.speed * speedMultiplier)
+    const quaternion = new THREE.Quaternion().setFromAxisAngle(config.axis, delta * config.speed * flowSpeed)
 
     for (let i = 0; i < PARTICLES_PER_RING; i++) {
       const x = posAttr.getX(i)
@@ -211,7 +234,11 @@ function ParticleRing({ config, index, currentState, transition }: ParticleRingP
     material.uniforms.uColor.value.lerp(targetColor, delta * 3)
   })
 
-  return <points ref={pointsRef} geometry={geometry} material={material} />
+  return (
+    <group ref={groupRef}>
+      <points ref={pointsRef} geometry={geometry} material={material} />
+    </group>
+  )
 }
 
 interface EyeClustersProps {
