@@ -4,20 +4,32 @@ import { OrbitControls } from '@react-three/drei'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import { SpaceEnvironment } from './components/SpaceEnvironment'
 import { OphanimEntity } from './components/OphanimEntity'
+import { NebulaEntity } from './components/NebulaEntity'
 import type { EntityState, TransitionState } from './hooks/useEntityState'
 import { useEntityState } from './hooks/useEntityState'
 import './index.css'
 
+type EntityForm = 'ophanim' | 'nebula' | 'lattice'
+
 interface SceneProps {
   currentState: EntityState
   transition: TransitionState
+  form: EntityForm
 }
 
-function Scene({ currentState, transition }: SceneProps) {
+function Scene({ currentState, transition, form }: SceneProps) {
   return (
     <>
       <SpaceEnvironment />
-      <OphanimEntity currentState={currentState} transition={transition} />
+      {form === 'ophanim' && (
+        <OphanimEntity currentState={currentState} transition={transition} />
+      )}
+      {form === 'nebula' && (
+        <NebulaEntity currentState={currentState} transition={transition} />
+      )}
+      {form === 'lattice' && (
+        <OphanimEntity currentState={currentState} transition={transition} />
+      )}
 
       <EffectComposer>
         <Bloom
@@ -56,15 +68,51 @@ function StateUI({ currentState, transitionTo }: StateUIProps) {
   )
 }
 
+interface FormSwitcherProps {
+  currentForm: EntityForm
+  setForm: (form: EntityForm) => void
+}
+
+function FormSwitcher({ currentForm, setForm }: FormSwitcherProps) {
+  const forms: { id: EntityForm; label: string; available: boolean }[] = [
+    { id: 'ophanim', label: 'Ophanim', available: true },
+    { id: 'nebula', label: 'Nebula', available: true },
+    { id: 'lattice', label: 'Lattice', available: false },
+  ]
+
+  return (
+    <div className="form-switcher">
+      <div className="form-switcher-label">Form</div>
+      <div className="form-switcher-options">
+        {forms.map((form) => (
+          <button
+            key={form.id}
+            className={`form-option ${currentForm === form.id ? 'active' : ''} ${!form.available ? 'disabled' : ''}`}
+            onClick={() => form.available && setForm(form.id)}
+            disabled={!form.available}
+          >
+            {form.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function App() {
   const { currentState, transition, transitionTo } = useEntityState()
   const [autoRotate, setAutoRotate] = useState(true)
+  const [form, setForm] = useState<EntityForm>('ophanim')
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === '`') {
         setAutoRotate(prev => !prev)
       }
+      // Number keys for quick form switching
+      if (e.key === '1') setForm('ophanim')
+      if (e.key === '2') setForm('nebula')
+      // if (e.key === '3') setForm('lattice') // Not available yet
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
@@ -86,7 +134,7 @@ export default function App() {
         style={{ background: '#000000' }}
       >
         <color attach="background" args={['#000000']} />
-        <Scene currentState={currentState} transition={transition} />
+        <Scene currentState={currentState} transition={transition} form={form} />
         <OrbitControls
           enablePan={false}
           minDistance={5}
@@ -96,6 +144,7 @@ export default function App() {
           autoRotateSpeed={0.5}
         />
       </Canvas>
+      <FormSwitcher currentForm={form} setForm={setForm} />
       <StateUI currentState={currentState} transitionTo={transitionTo} />
     </>
   )

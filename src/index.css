@@ -65,3 +65,70 @@ html, body, #root {
   opacity: 0.5;
   margin-left: 6px;
 }
+
+/* Form Switcher - Glass UI */
+.form-switcher {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 100;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 12px;
+  min-width: 120px;
+}
+
+.form-switcher-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.form-switcher-options {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-option {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: inherit;
+  letter-spacing: 0.05em;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.form-option:hover:not(.disabled) {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.form-option.active {
+  background: rgba(74, 158, 255, 0.15);
+  color: #4a9eff;
+  border-left: 2px solid #4a9eff;
+}
+
+.form-option.disabled {
+  color: rgba(255, 255, 255, 0.2);
+  cursor: not-allowed;
+}
+
+.form-option.disabled::after {
+  content: ' (soon)';
+  font-size: 9px;
+  opacity: 0.5;
+}
